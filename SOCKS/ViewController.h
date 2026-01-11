@@ -12,6 +12,7 @@
 @interface ViewController : UIViewController
 
 @property (weak, nonatomic) IBOutlet UILabel *statusLabel;
+@property (weak, nonatomic) IBOutlet UILabel *instructionsLabel;
 @property (strong) AVAudioPlayer *audioPlayer;
 
 @end

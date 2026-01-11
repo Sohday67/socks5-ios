@@ -22,13 +22,33 @@ extern int socks_main(int argc, const char** argv);
 
     int port = 4884;
     
+    // Set up instructions label if not connected via storyboard
+    if (self.instructionsLabel) {
+        self.instructionsLabel.numberOfLines = 0;
+        self.instructionsLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         char portbuf[32];
         sprintf(portbuf, "%d", port);
         const char *argv[] = {"microsocks", "-p", portbuf, NULL};
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self.statusLabel setText:[NSString stringWithFormat:@"Running at %@:%d", [AppDelegate deviceIPAddress], port]];
+            NSString *ipAddress = [AppDelegate deviceIPAddress];
+            [self.statusLabel setText:[NSString stringWithFormat:@"Running at %@:%d", ipAddress, port]];
+            
+            // Show connection instructions
+            NSString *instructions = @"📱 USB Tethering (Recommended):\n"
+                                     @"Connect iPhone to Mac via USB cable.\n"
+                                     @"Enable Personal Hotspot.\n"
+                                     @"Configure proxy: 172.20.10.1:4884\n\n"
+                                     @"📶 WiFi Hotspot:\n"
+                                     @"Requires external router due to\n"
+                                     @"iOS device isolation.";
+            
+            if (self.instructionsLabel) {
+                [self.instructionsLabel setText:instructions];
+            }
         });
 
         int status = socks_main(3, argv);
