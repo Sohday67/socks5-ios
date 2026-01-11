@@ -39,11 +39,12 @@ extern int socks_main(int argc, const char** argv);
             
             // Show connection instructions with dynamic IP and port
             NSString *instructions = [NSString stringWithFormat:
-                @"📡 Configure proxy: %@:%d\n\n"
-                @"⚠️ iOS 17+ Note:\n"
-                @"Personal Hotspot has device isolation.\n"
-                @"Use external router or VPN solution\n"
-                @"(e.g., PairVPN) for direct access.",
+                @"📡 Proxy: %@:%d\n\n"
+                @"📖 Connection options:\n"
+                @"• External router (recommended)\n"
+                @"• USB tethering (iOS 16 and earlier)\n"
+                @"• VPN app like PairVPN (iOS 17+)\n\n"
+                @"See README for detailed setup.",
                 ipAddress, port];
             
             if (self.instructionsLabel) {

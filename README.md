@@ -67,9 +67,9 @@ On iOS 16 and earlier, USB tethering may bypass device isolation:
 
 **Note**: This method may not work on iOS 17+ due to enhanced security restrictions.
 
-#### Method 3: VPN-based Solution (iOS 17+)
+#### Method 3: VPN-based Solution (Alternative for iOS 17+)
 
-For iOS 17 and later, a VPN tunnel is required to bypass device isolation. Apps like [PairVPN](https://pairvpn.com/) use this approach - they create a VPN tunnel between the client device and the iPhone, allowing traffic to flow through even with device isolation enabled.
+If you don't have an external router, a VPN-based solution can bypass device isolation on iOS 17+. Apps like [PairVPN](https://pairvpn.com/) use this approach - they create a VPN tunnel between the client device and the iPhone, allowing traffic to flow through even with device isolation enabled.
 
 **How VPN bypasses isolation**: The VPN creates an encrypted tunnel that appears as a single connection to iOS, allowing the client device to communicate directly with the iPhone regardless of hotspot isolation settings.
 
@@ -116,7 +116,7 @@ curl --proxy socks5://YOUR_IPHONE_IP:4884 https://example.com
 
 ### Troubleshooting
 
-- **Can't connect via Personal Hotspot (WiFi or USB)?** This is due to iOS device isolation. Use an external router (Method 1) or a VPN-based solution (Method 3).
+- **Can't connect via Personal Hotspot (WiFi or USB)?** On iOS 17+, this is due to enhanced device isolation. Use an external router (Method 1) or a VPN-based solution (Method 3). On iOS 16 and earlier, USB tethering (Method 2) may work.
 - **"Connection refused" errors?** Make sure the SOCKS app is running on your iPhone and showing "Running" status.
 - **Slow speeds?** This app is designed to bypass carrier throttling. If speeds are still slow, check your carrier's policies.
 - **App stops when iPhone sleeps?** The app uses background audio to stay running, but some iOS versions may still suspend it. Keep the app in foreground for best results.
