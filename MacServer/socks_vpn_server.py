@@ -142,8 +142,12 @@ class SOCKSProxy:
                     break
                 writer.write(data)
                 await writer.drain()
-        except:
+        except asyncio.CancelledError:
             pass
+        except ConnectionResetError:
+            pass
+        except Exception as e:
+            logger.debug(f"Relay error: {e}")
         finally:
             writer.close()
 

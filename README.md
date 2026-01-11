@@ -78,6 +78,8 @@ This app includes a built-in VPN solution that bypasses iOS device isolation. Th
 - A paid Apple Developer account with Network Extension entitlements
 - The app built with both the main app and PacketTunnel extension
 
+**Note**: This is a proof-of-concept implementation. The VPN tunnel establishes the connection architecture, but full packet forwarding requires additional development. For a production-ready solution, consider using PairVPN or an external router.
+
 **Setup:**
 
 1. **On your Mac**, run the VPN server:
