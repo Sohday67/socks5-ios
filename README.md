@@ -26,6 +26,11 @@ You can download a pre-built unsigned IPA from the [Releases](../../releases) pa
 
 Download this repo, run `git submodule update --init --recursive`, and then build & deploy from Xcode.
 
+**Note**: To use the built-in VPN feature, you'll need:
+- A paid Apple Developer account
+- Network Extension entitlements enabled for your App ID
+- Build both the main app and PacketTunnel extension targets
+
 ## Installing the IPA
 
 Since this is an unsigned IPA, you'll need to sign it before installing. Here are some options:
@@ -67,11 +72,36 @@ On iOS 16 and earlier, USB tethering may bypass device isolation:
 
 **Note**: This method may not work on iOS 17+ due to enhanced security restrictions.
 
-#### Method 3: VPN-based Solution (Alternative for iOS 17+)
+#### Method 3: Built-in VPN Mode (iOS 17+ - Requires Developer Certificate)
 
-If you don't have an external router, a VPN-based solution can bypass device isolation on iOS 17+. Apps like [PairVPN](https://pairvpn.com/) use this approach - they create a VPN tunnel between the client device and the iPhone, allowing traffic to flow through even with device isolation enabled.
+This app includes a built-in VPN solution that bypasses iOS device isolation. This requires:
+- A paid Apple Developer account with Network Extension entitlements
+- The app built with both the main app and PacketTunnel extension
 
-**How VPN bypasses isolation**: The VPN creates an encrypted tunnel that appears as a single connection to iOS, allowing the client device to communicate directly with the iPhone regardless of hotspot isolation settings.
+**Setup:**
+
+1. **On your Mac**, run the VPN server:
+   ```bash
+   cd MacServer
+   python3 socks_vpn_server.py
+   ```
+   The server will display its IP address and port.
+
+2. **On your iPhone**:
+   - Open the SOCKS app
+   - Enter your Mac's IP address in the "Server Address" field
+   - Tap "Connect VPN"
+   - Allow the VPN configuration when prompted
+
+3. **Configure proxy on Mac**:
+   - Once connected, configure your Mac to use the SOCKS proxy at `127.0.0.1:1080`
+   - The VPN server includes a local SOCKS5 proxy
+
+**How it works**: The iPhone creates an outbound VPN connection to your Mac (outbound connections bypass device isolation). All traffic then flows through this tunnel, allowing the Mac to access the iPhone's proxy.
+
+#### Method 4: Third-party VPN Apps (Alternative)
+
+Apps like [PairVPN](https://pairvpn.com/) use a similar VPN approach - they create a VPN tunnel between the client device and the iPhone, allowing traffic to flow through even with device isolation enabled.
 
 ### macOS Proxy Configuration
 
@@ -84,8 +114,8 @@ If you don't have an external router, a VPN-based solution can bypass device iso
 5. Go to the **Proxies** tab
 6. Check **SOCKS Proxy**
 7. Enter:
-   - **Server**: Your iPhone's IP address (shown in the app)
-   - **Port**: `4884`
+   - **Server**: Your iPhone's IP address (shown in the app), or `127.0.0.1` if using VPN mode
+   - **Port**: `4884` (direct connection) or `1080` (VPN mode)
 8. Click **OK**, then **Apply**
 
 #### Browser-only Proxy (Firefox)
@@ -112,15 +142,34 @@ export all_proxy=socks5://YOUR_IPHONE_IP:4884
 
 # Or use with specific commands
 curl --proxy socks5://YOUR_IPHONE_IP:4884 https://example.com
+
+# If using VPN mode:
+export ALL_PROXY=socks5://127.0.0.1:1080
 ```
 
 ### Troubleshooting
 
-- **Can't connect via Personal Hotspot (WiFi or USB)?** On iOS 17+, this is due to enhanced device isolation. Use an external router (Method 1) or a VPN-based solution (Method 3). On iOS 16 and earlier, USB tethering (Method 2) may work.
+- **Can't connect via Personal Hotspot (WiFi or USB)?** On iOS 17+, this is due to enhanced device isolation. Use an external router (Method 1), the built-in VPN mode (Method 3), or a third-party VPN app (Method 4). On iOS 16 and earlier, USB tethering (Method 2) may work.
+- **VPN connection fails?** Make sure the Mac server (`socks_vpn_server.py`) is running and firewall isn't blocking port 9876.
 - **"Connection refused" errors?** Make sure the SOCKS app is running on your iPhone and showing "Running" status.
 - **Slow speeds?** This app is designed to bypass carrier throttling. If speeds are still slow, check your carrier's policies.
 - **App stops when iPhone sleeps?** The app uses background audio to stay running, but some iOS versions may still suspend it. Keep the app in foreground for best results.
-- **iOS 17+ users**: Due to enhanced device isolation, you'll need either an external router or a VPN-based solution like PairVPN.
+- **iOS 17+ users**: Due to enhanced device isolation, you'll need either an external router, the built-in VPN mode, or a third-party VPN solution.
+
+## Building with VPN Support
+
+To build the app with VPN support, you need:
+
+1. **Apple Developer Account** with Network Extension capability
+2. **Configure App ID** in Apple Developer portal:
+   - Enable "Network Extensions" capability
+   - Create an App Group (e.g., `group.ca.robertxiao.socks-ios`)
+3. **In Xcode**:
+   - Open the project
+   - Select the SOCKS target > Signing & Capabilities
+   - Add "Network Extensions" capability (select "Packet Tunnel")
+   - Add "App Groups" capability
+   - Build both SOCKS and PacketTunnel targets
 
 ## Alternative
 

@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "AppDelegate.h"
+#import "VPNManager.h"
 
 @interface ViewController ()
 
@@ -28,6 +29,15 @@ extern int socks_main(int argc, const char** argv);
         self.instructionsLabel.textAlignment = NSTextAlignmentCenter;
     }
     
+    // Set up VPN manager delegate
+    [VPNManager sharedManager].delegate = self;
+    
+    // Set up server address field
+    if (self.serverAddressField) {
+        self.serverAddressField.placeholder = @"Mac IP (e.g., 192.168.1.100)";
+        self.serverAddressField.keyboardType = UIKeyboardTypeDecimalPad;
+    }
+    
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         char portbuf[32];
         sprintf(portbuf, "%d", port);
@@ -43,7 +53,7 @@ extern int socks_main(int argc, const char** argv);
                 @"📖 Connection options:\n"
                 @"• External router (recommended)\n"
                 @"• USB tethering (iOS 16 and earlier)\n"
-                @"• VPN app like PairVPN (iOS 17+)\n\n"
+                @"• VPN mode below (iOS 17+)\n\n"
                 @"See README for detailed setup.",
                 ipAddress, port];
             
@@ -70,8 +80,106 @@ extern int socks_main(int argc, const char** argv);
     [self.audioPlayer setNumberOfLoops:-1];
     [self.audioPlayer prepareToPlay];
     [self.audioPlayer play];
+    
+    // Update VPN status
+    [self updateVPNStatusUI];
 }
 
+- (IBAction)toggleVPN:(id)sender {
+    VPNManager *vpnManager = [VPNManager sharedManager];
+    
+    if ([vpnManager isConnected]) {
+        [vpnManager disconnect];
+    } else {
+        NSString *serverAddress = self.serverAddressField.text;
+        if (serverAddress.length == 0) {
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Server Address Required"
+                                                                           message:@"Please enter your Mac's IP address.\n\nRun socks_vpn_server.py on your Mac to see the address."
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+            [self presentViewController:alert animated:YES completion:nil];
+            return;
+        }
+        
+        [self.vpnButton setEnabled:NO];
+        [self.vpnStatusLabel setText:@"Configuring..."];
+        
+        [vpnManager configureVPNWithServerAddress:serverAddress port:9876 completion:^(NSError * _Nullable error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (error) {
+                    [self.vpnStatusLabel setText:@"Configuration failed"];
+                    [self.vpnButton setEnabled:YES];
+                    
+                    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"VPN Error"
+                                                                                   message:error.localizedDescription
+                                                                            preferredStyle:UIAlertControllerStyleAlert];
+                    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+                    [self presentViewController:alert animated:YES completion:nil];
+                    return;
+                }
+                
+                [vpnManager connectWithCompletion:^(NSError * _Nullable error) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self.vpnButton setEnabled:YES];
+                        if (error) {
+                            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Connection Failed"
+                                                                                           message:error.localizedDescription
+                                                                                    preferredStyle:UIAlertControllerStyleAlert];
+                            [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+                            [self presentViewController:alert animated:YES completion:nil];
+                        }
+                    });
+                }];
+            });
+        }];
+    }
+}
+
+- (void)updateVPNStatusUI {
+    VPNManager *vpnManager = [VPNManager sharedManager];
+    
+    switch (vpnManager.status) {
+        case VPNConnectionStatusDisconnected:
+            [self.vpnStatusLabel setText:@"VPN: Disconnected"];
+            [self.vpnButton setTitle:@"Connect VPN" forState:UIControlStateNormal];
+            [self.vpnButton setEnabled:YES];
+            break;
+        case VPNConnectionStatusConnecting:
+            [self.vpnStatusLabel setText:@"VPN: Connecting..."];
+            [self.vpnButton setTitle:@"Connecting..." forState:UIControlStateNormal];
+            [self.vpnButton setEnabled:NO];
+            break;
+        case VPNConnectionStatusConnected:
+            [self.vpnStatusLabel setText:@"VPN: Connected ✓"];
+            [self.vpnButton setTitle:@"Disconnect VPN" forState:UIControlStateNormal];
+            [self.vpnButton setEnabled:YES];
+            break;
+        case VPNConnectionStatusDisconnecting:
+            [self.vpnStatusLabel setText:@"VPN: Disconnecting..."];
+            [self.vpnButton setTitle:@"Disconnecting..." forState:UIControlStateNormal];
+            [self.vpnButton setEnabled:NO];
+            break;
+        case VPNConnectionStatusError:
+            [self.vpnStatusLabel setText:@"VPN: Error"];
+            [self.vpnButton setTitle:@"Connect VPN" forState:UIControlStateNormal];
+            [self.vpnButton setEnabled:YES];
+            break;
+    }
+}
+
+#pragma mark - VPNManagerDelegate
+
+- (void)vpnStatusDidChange:(VPNConnectionStatus)status {
+    [self updateVPNStatusUI];
+}
+
+- (void)vpnDidFailWithError:(NSError *)error {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"VPN Error"
+                                                                   message:error.localizedDescription
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alert animated:YES completion:nil];
+}
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
