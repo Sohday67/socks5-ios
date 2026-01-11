@@ -37,14 +37,16 @@ extern int socks_main(int argc, const char** argv);
             NSString *ipAddress = [AppDelegate deviceIPAddress];
             [self.statusLabel setText:[NSString stringWithFormat:@"Running at %@:%d", ipAddress, port]];
             
-            // Show connection instructions
-            NSString *instructions = @"📱 USB Tethering (Recommended):\n"
-                                     @"Connect iPhone to Mac via USB cable.\n"
-                                     @"Enable Personal Hotspot.\n"
-                                     @"Configure proxy: 172.20.10.1:4884\n\n"
-                                     @"📶 WiFi Hotspot:\n"
-                                     @"Requires external router due to\n"
-                                     @"iOS device isolation.";
+            // Show connection instructions with dynamic IP and port
+            NSString *instructions = [NSString stringWithFormat:
+                @"📱 USB Tethering (Recommended):\n"
+                @"Connect iPhone to Mac via USB cable.\n"
+                @"Enable Personal Hotspot.\n"
+                @"Configure proxy: %@:%d\n\n"
+                @"📶 WiFi Hotspot:\n"
+                @"Requires external router due to\n"
+                @"iOS device isolation.",
+                ipAddress, port];
             
             if (self.instructionsLabel) {
                 [self.instructionsLabel setText:instructions];
