@@ -35,7 +35,7 @@ extern int socks_main(int argc, const char** argv);
     // Set up server address field
     if (self.serverAddressField) {
         self.serverAddressField.placeholder = @"Mac IP (e.g., 192.168.1.100)";
-        self.serverAddressField.keyboardType = UIKeyboardTypeDecimalPad;
+        self.serverAddressField.keyboardType = UIKeyboardTypeNumbersAndPunctuation;
     }
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
