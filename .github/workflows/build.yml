@@ -1,0 +1,117 @@
+name: Build and Release SOCKS5 IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_artifact:
+        description: "Upload IPA as an Artifact"
+        default: true
+        required: false
+        type: boolean
+
+      create_release:
+        description: "Create a Release"
+        default: true
+        required: false
+        type: boolean
+
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build SOCKS5 IPA
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Get App Version
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" SOCKS/Info.plist)
+          BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" SOCKS/Info.plist)
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "APP_BUILD=$BUILD" >> $GITHUB_ENV
+          echo "App Version: $VERSION (Build $BUILD)"
+
+      - name: Build iOS App
+        run: |
+          xcodebuild -project SOCKS.xcodeproj \
+            -scheme SOCKS \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $PWD/build/SOCKS.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM=""
+
+      - name: Create IPA
+        run: |
+          mkdir -p build/Payload
+          cp -r build/SOCKS.xcarchive/Products/Applications/SOCKS.app build/Payload/
+          cd build
+          zip -r SOCKS_${{ env.APP_VERSION }}.ipa Payload
+          echo "IPA created: SOCKS_${{ env.APP_VERSION }}.ipa"
+          ls -la *.ipa
+
+      - name: Upload IPA as Artifact
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_artifact || github.event_name != 'workflow_dispatch' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SOCKS_${{ env.APP_VERSION }}
+          path: build/SOCKS_${{ env.APP_VERSION }}.ipa
+
+      - name: Create Release
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.create_release) || startsWith(github.ref, 'refs/tags/') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}-build{1}', env.APP_VERSION, github.run_number) }}
+          name: SOCKS5 iOS v${{ env.APP_VERSION }}
+          files: build/SOCKS_${{ env.APP_VERSION }}.ipa
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
+          body: |
+            ## SOCKS5 iOS App v${{ env.APP_VERSION }}
+            
+            This is an unsigned IPA file. You will need to sign it before installing on your device.
+            
+            ### Installation Options:
+            - **AltStore**: Use AltStore to sideload the IPA to your device
+            - **Sideloadly**: Use Sideloadly to install the IPA
+            - **TrollStore**: If your device supports TrollStore, you can install directly
+            
+            ### Usage:
+            After installation, open the app and note the SOCKS5 proxy address displayed (e.g., `172.20.10.1:4884`). Configure your system/browser to use this address as a SOCKS5 proxy.
+
+      - name: Job Summary
+        run: |
+          echo "### 🛠️ Build Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**App Version:** ${{ env.APP_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Number:** ${{ env.APP_BUILD }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.upload_artifact }}" == "true" ]] || [[ "${{ github.event_name }}" != "workflow_dispatch" ]]; then
+            echo "📦 **Artifact:** Scroll down to the Artifacts section to download the IPA." >> $GITHUB_STEP_SUMMARY
+          fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.create_release }}" == "true" ]] || [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "🚀 **Release:** Check the [Releases](https://github.com/${{ github.repository }}/releases) page." >> $GITHUB_STEP_SUMMARY
+          fi
