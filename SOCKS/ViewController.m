@@ -32,6 +32,11 @@ extern int socks_main(int argc, const char** argv);
     // Set up VPN manager delegate
     [VPNManager sharedManager].delegate = self;
     
+    // Add tap gesture recognizer to dismiss keyboard when tapping outside text field
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissKeyboard)];
+    tapGesture.cancelsTouchesInView = NO;
+    [self.view addGestureRecognizer:tapGesture];
+    
     // Set up server address field
     if (self.serverAddressField) {
         self.serverAddressField.placeholder = @"Mac IP (e.g., 192.168.1.100)";
@@ -179,6 +184,12 @@ extern int socks_main(int argc, const char** argv);
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
+}
+
+#pragma mark - Keyboard Handling
+
+- (void)dismissKeyboard {
+    [self.view endEditing:YES];
 }
 
 - (void)didReceiveMemoryWarning {
