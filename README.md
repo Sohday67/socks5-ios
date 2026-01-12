@@ -88,6 +88,12 @@ This app includes a built-in VPN solution that bypasses iOS device isolation. Th
    python3 socks_vpn_server.py
    ```
    The server will display its IP address and port.
+   
+   **Optional arguments:**
+   - `--socks-host HOST`: SOCKS5 proxy host (default: 0.0.0.0)
+   - `--socks-port PORT`: SOCKS5 proxy port (default: 1080)
+   - `--port PORT`: VPN tunnel port (default: 9876)
+   - `--socks-only`: Run only the SOCKS5 proxy (no VPN tunnel)
 
 2. **On your iPhone**:
    - Open the SOCKS app
@@ -96,8 +102,8 @@ This app includes a built-in VPN solution that bypasses iOS device isolation. Th
    - Allow the VPN configuration when prompted
 
 3. **Configure proxy on Mac**:
-   - Once connected, configure your Mac to use the SOCKS proxy at `127.0.0.1:1080`
-   - The VPN server includes a local SOCKS5 proxy
+   - Once connected, configure your Mac to use the SOCKS proxy at `127.0.0.1:1080` (or `localhost:1080`)
+   - The VPN server includes a local SOCKS5 proxy that listens on all interfaces by default
 
 **How it works**: The iPhone creates an outbound VPN connection to your Mac (outbound connections bypass device isolation). All traffic then flows through this tunnel, allowing the Mac to access the iPhone's proxy.
 

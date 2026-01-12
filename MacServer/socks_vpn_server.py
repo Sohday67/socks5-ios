@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class SOCKSProxy:
     """Simple SOCKS5 proxy implementation"""
     
-    def __init__(self, host: str = '127.0.0.1', port: int = 1080):
+    def __init__(self, host: str = '0.0.0.0', port: int = 1080):
         self.host = host
         self.port = port
         self.server: Optional[asyncio.Server] = None
@@ -271,6 +271,8 @@ async def main():
     parser = argparse.ArgumentParser(description='SOCKS5 VPN Server for iOS')
     parser.add_argument('--port', type=int, default=9876,
                         help='VPN tunnel port (default: 9876)')
+    parser.add_argument('--socks-host', type=str, default='0.0.0.0',
+                        help='SOCKS5 proxy host (default: 0.0.0.0)')
     parser.add_argument('--socks-port', type=int, default=1080,
                         help='Local SOCKS5 proxy port (default: 1080)')
     parser.add_argument('--socks-only', action='store_true',
@@ -284,7 +286,7 @@ async def main():
         logging.getLogger().setLevel(logging.DEBUG)
     
     # Start SOCKS5 proxy
-    socks_proxy = SOCKSProxy(port=args.socks_port)
+    socks_proxy = SOCKSProxy(host=args.socks_host, port=args.socks_port)
     await socks_proxy.start()
     
     if not args.socks_only:
