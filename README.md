@@ -88,6 +88,12 @@ This app includes a built-in VPN solution that bypasses iOS device isolation. Th
    python3 socks_vpn_server.py
    ```
    The server will display its IP address and port.
+   
+   **Optional arguments:**
+   - `--socks-host HOST`: SOCKS5 proxy host (default: 0.0.0.0)
+   - `--socks-port PORT`: SOCKS5 proxy port (default: 1080)
+   - `--port PORT`: VPN tunnel port (default: 9876)
+   - `--socks-only`: Run only the SOCKS5 proxy (no VPN tunnel)
 
 2. **On your iPhone**:
    - Open the SOCKS app
